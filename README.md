@@ -27,40 +27,83 @@ Namizna aplikacija zgrajena z Java in PostgreSQL za upravljanje kolesarskih poti
 ### Tabele
 
 ```sql
-CREATE TABLE citys (
-    id SERIAL PRIMARY KEY,
-    name TEXT
-);
-
-CREATE TABLE pois (
-    id SERIAL PRIMARY KEY,
-    name TEXT
-);
-
+-- Create the "routs" table
 CREATE TABLE routs (
-    id SERIAL PRIMARY KEY,
-    name TEXT,
-    length FLOAT,
-    difficulty INT,
-    duration FLOAT,
-    description TEXT,
-    startlocation_id INT REFERENCES citys(id),
-    endlocation_id INT REFERENCES citys(id),
-    num_of_poi INT DEFAULT 0
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  length FLOAT NOT NULL,
+  difficulty INTEGER NOT NULL,
+  duration FLOAT NOT NULL,
+  description TEXT,
+  num_of_poi INTEGER NOT NULL DEFAULT 0,
+  startLocation_id INTEGER NOT NULL,
+  endLocation_id INTEGER NOT NULL,
+  date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE route_poi (
-    route_id INT REFERENCES routs(id),
-    poi_id INT REFERENCES pois(id)
+-- Create the "route_POI" table
+CREATE TABLE route_POI (
+  id SERIAL PRIMARY KEY,
+  poi_position INTEGER NOT NULL,
+  route_id INTEGER NOT NULL,
+  poi_id INTEGER NOT NULL
 );
 
-CREATE TABLE comments (
-    comment_id SERIAL PRIMARY KEY,
-    route_id INT REFERENCES routs(id),
-    comment_text TEXT
+-- Create the "PointsOfInterest" table
+CREATE TABLE PointsOfInterest (
+  id SERIAL PRIMARY KEY,
+  pointName VARCHAR(255) NOT NULL,
+  description TEXT,
+  type VARCHAR(255) NOT NULL,
+  location_id INTEGER NOT NULL
 );
 
+-- Create the "Citys" table
+CREATE TABLE Citys (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  decsripton TEXT,
+  post_code VARCHAR(20) NOT NULL
+);
 
+-- Create the "Users" table
+CREATE TABLE Users (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(255) NOT NULL UNIQUE,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  phone_num VARCHAR(20)
+);
+
+-- Create the "review_user" table
+CREATE TABLE review_user (
+  id SERIAL PRIMARY KEY,
+  route_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  description TEXT,
+  date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Add foreign key constraints and relationships after creating all tables
+ALTER TABLE route_POI
+  ADD CONSTRAINT fk_route FOREIGN KEY (route_id) REFERENCES routs(id),
+  ADD CONSTRAINT fk_poi FOREIGN KEY (poi_id) REFERENCES PointsOfInterest(id);
+
+ALTER TABLE routs
+  ADD CONSTRAINT fk_startLocation FOREIGN KEY (startLocation_id) REFERENCES Citys(id),
+  ADD CONSTRAINT fk_endLocation FOREIGN KEY (endLocation_id) REFERENCES Citys(id);
+
+ALTER TABLE PointsOfInterest
+  ADD CONSTRAINT fk_location FOREIGN KEY (location_id) REFERENCES Citys(id);
+
+ALTER TABLE review_user
+  ADD CONSTRAINT fk_route_review FOREIGN KEY (route_id) REFERENCES routs(id),
+  ADD CONSTRAINT fk_user_review FOREIGN KEY (user_id) REFERENCES Users(id);
+```
+
+### Functions
+
+```sql
 CREATE OR REPLACE FUNCTION insert_route(
     p_name VARCHAR,
     p_length FLOAT,
