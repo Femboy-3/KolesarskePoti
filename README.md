@@ -104,6 +104,72 @@ ALTER TABLE review_user
 ### Functions
 
 ```sql
+CREATE OR REPLACE FUNCTION login_user(emaili VARCHAR, passwordi VARCHAR)
+RETURNS BOOLEAN AS $$
+DECLARE
+    stored_password VARCHAR;
+BEGIN
+    SELECT password INTO stored_password
+    FROM Users
+    WHERE email = emaili;
+
+    IF stored_password IS NOT NULL AND stored_password = passwordi THEN
+        RETURN TRUE;
+    ELSE
+        RETURN FALSE;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION register_user(usernamei VARCHAR, emaili VARCHAR, passwordi VARCHAR, phone_numi VARCHAR)
+RETURNS BOOLEAN AS $$
+BEGIN
+    INSERT INTO Users (username, email, password, phone_num)
+    VALUES (usernamei, emaili, passwordi, phone_numi);
+
+    RETURN TRUE;
+EXCEPTION
+    WHEN unique_violation THEN
+        RETURN FALSE;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION get_all_routes()
+RETURNS TABLE (
+    id INT,
+    name varchar,
+    length FLOAT,
+    difficulty INT,
+    duration FLOAT,
+    description TEXT,
+    num_of_poi INT,
+    start_location_name varchar,
+    end_location_name varchar,
+    date_created TIMESTAMP
+)
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        r.id,
+        r.name,
+        r.length,
+        r.difficulty,
+        r.duration,
+        r.description,
+        r.num_of_poi,
+        sl.name AS start_location_name,
+        el.name AS end_location_name,
+        r.date_created
+    FROM routs r
+    JOIN citys sl ON r.startlocation_id = sl.id
+    JOIN citys el ON r.endlocation_id = el.id;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
 CREATE OR REPLACE FUNCTION insert_route(
     p_name VARCHAR,
     p_length FLOAT,
@@ -113,7 +179,7 @@ CREATE OR REPLACE FUNCTION insert_route(
     p_start_location_name VARCHAR,
     p_end_location_name VARCHAR,
     p_pois INT[]
-) RETURNS void AS $$
+) RETURNS INT AS $$
 DECLARE
     start_location_id INT;
     end_location_id INT;
@@ -130,43 +196,52 @@ BEGIN
     FOREACH p_id IN ARRAY p_pois LOOP
         INSERT INTO route_poi(route_id, poi_id) VALUES (rout_id, p_id);
     END LOOP;
+
+    RETURN rout_id;
 END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION get_route_comments(route_id INT) 
-RETURNS TABLE(comment_id INT, comment_text TEXT) AS $$
-BEGIN
-    RETURN QUERY 
-    SELECT c.comment_id, c.comment_text
-    FROM comments c
-    WHERE c.route_id = route_id;
-END;
-$$ LANGUAGE plpgsql;
+CREATE TRIGGER update_num_of_poi_trigger
+AFTER INSERT ON route_poi
+FOR EACH ROW
+EXECUTE FUNCTION update_num_of_poi();
 
-
-CREATE OR REPLACE FUNCTION increase_poi_count() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION update_num_of_poi()
+RETURNS TRIGGER AS $$
 BEGIN
-    UPDATE routs SET num_of_poi = num_of_poi + 1 WHERE id = NEW.route_id;
+    UPDATE routs
+    SET num_of_poi = (SELECT COUNT(*) FROM route_poi WHERE route_id = NEW.route_id)
+    WHERE id = NEW.route_id;
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_increase_poi
-AFTER INSERT ON route_poi
-FOR EACH ROW
-EXECUTE FUNCTION increase_poi_count();
 
-
-CREATE OR REPLACE FUNCTION decrease_poi_count() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION update_num_of_poi_after_delete()
+RETURNS TRIGGER AS $$
 BEGIN
-    UPDATE routs SET num_of_poi = num_of_poi - 1 WHERE id = OLD.route_id;
+    UPDATE routs
+    SET num_of_poi = (SELECT COUNT(*) FROM route_poi WHERE route_id = OLD.route_id)
+    WHERE id = OLD.route_id;
+
     RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_decrease_poi
+CREATE TRIGGER update_num_of_poi_after_delete_trigger
 AFTER DELETE ON route_poi
 FOR EACH ROW
-EXECUTE FUNCTION decrease_poi_count();
+EXECUTE FUNCTION update_num_of_poi_after_delete();
+
+CREATE OR REPLACE FUNCTION get_route_comments(route_idi INT)
+RETURNS TABLE(comment_id INT, comment_text TEXT) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT c.id, c.description
+    FROM review_user c
+    WHERE c.route_id = route_idi;
+END;
+$$ LANGUAGE plpgsql;
 ``` 
