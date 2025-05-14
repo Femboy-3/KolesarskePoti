@@ -1,6 +1,6 @@
-# Aplikacija za Upravljanje Pohodniških Poti 🏞️
+# Aplikacija za Upravljanje Kolesarskih Poti 🏞️
 
-Namizna aplikacija zgrajena z Java Swing in PostgreSQL za upravljanje pohodniških poti po Sloveniji. Uporabniki lahko dodajajo, pregledajo in urejajo poti, izbirajo zanimivosti (POI – "points of interest") ter hranijo podrobne informacije o posameznih poteh in komentarjih.
+Namizna aplikacija zgrajena z Java in PostgreSQL za upravljanje kolesarskih poti po Sloveniji. Uporabniki lahko dodajajo, pregledajo in urejajo poti, izbirajo zanimivosti (POI – "points of interest") ter hranijo podrobne informacije o posameznih poteh in komentarjih.
 
 ## Funkcionalnosti
 
@@ -8,14 +8,14 @@ Namizna aplikacija zgrajena z Java Swing in PostgreSQL za upravljanje pohodnišk
   - Ime poti, zahtevnost, dolžina, trajanje in opis
   - Začetno in končno mesto (izbirno iz spustnega seznama)
   - Več izbranih zanimivosti (POI)
-- Prikaz podrobnosti poti in komentarjev
+- Prikaz komentarjev
 - Sistem komentarjev za vsako pot
 - Samodejno sledenje številu POI na poti z uporabo sprožilcev (triggers)
 - Podprto z bazo PostgreSQL in lastnimi SQL funkcijami
 
 ## Tehnologije
 
-- Java (Swing) za uporabniški vmesnik
+- Java za uporabniški vmesnik
 - PostgreSQL baza podatkov
 - JDBC za povezavo z bazo
 - SQL funkcije in sprožilci za logiko in podatkovno integriteto
